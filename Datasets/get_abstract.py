@@ -45,23 +45,24 @@ class Article:
         try:
             extracted_title = soup.find_all('h1', attrs = {'class':'name'})[0].text
             # double check article title : extracted_title may not exactly match title due to punctuation marks
-            print('https://academic.microsoft.com/paper/' + str(article_id))
-            print(extracted_title.lower().lstrip())
-            if SequenceMatcher(None, extracted_title.lower().lstrip(), self.title.lower()).ratio() > self.threshold:
+
+            if  SequenceMatcher(None, extracted_title.lower().lstrip().split(), self.title.lower().lstrip().split()).ratio() > self.threshold:
                 div =soup.find_all('div', attrs = {'class':'name-section'})[0]
 
                 Ps = div.find_all('p')
-                for each in Ps:
-                    if len(each.text)> 100:
-                        abstract = each.text
-                if abstract.split(' ')[0].lower() == 'abstract':
-                    abstract = abstract.replace(abstract.split(' ')[0], '').lstrip()
-                # unicode issue - https://stackoverflow.com/a/8087475
-                if self.convert_unicode:
-                    abstract = unidecode(abstract)
-            else:
-                print('failed to find matching article')
                 abstract = ''
+                for each in Ps:
+                    if len(each.text)> 500:
+                        abstract = each.text
+
+                        if abstract.split(' ')[0].lower() == 'abstract':
+                            abstract = abstract.replace(abstract.split(' ')[0], '').lstrip()
+                        # unicode issue - https://stackoverflow.com/a/8087475
+                        if self.convert_unicode:
+                            abstract = unidecode(abstract)
+            else:
+                #print('failed to find matching article')
+                abstract = None
         except IndexError as msg:
             print('Index Error :', str(msg))
             return ''
@@ -84,5 +85,3 @@ class Article:
             abstract = self.fetch_single_abstract(driver, article_id)
         driver.close()
         return abstract
-
-

@@ -8,15 +8,12 @@ import re
 
 from get_abstract import Article
 
-def pretty(d, indent=0):
-   for key, value in d.items():
-      print('\t' * indent + str(key))
-      if isinstance(value, dict):
-         pretty(value, indent+1)
-      else:
-         print('\t' * (indent+1) + str(value))
+import logging
 
-def append_to_parquet_table( dataframe, filepath=None, writer=None):
+logging.getLogger("bibtexparser").setLevel(logging.WARNING)
+
+
+def append_to_parquet_table(dataframe, filepath=None, writer=None):
     """Method writes/append dataframes in parquet format.
 
     This method is used to write pandas DataFrame as pyarrow Table in parquet format. If the methods is invoked
@@ -30,62 +27,99 @@ def append_to_parquet_table( dataframe, filepath=None, writer=None):
     """
     table = pa.Table.from_pandas(dataframe)
     if writer is None:
-        #print(table.schema)
         writer = pq.ParquetWriter(filepath, table.schema)
     writer.write_table(table=table)
     return writer
 
 
+labels = ["author", "journal", "editor", "volume", "number", "pages", "month", "year", "doi", "pages", "booktitle",
+          "publisher", "series", "comments", "notes", "institution", "bibsource"]
 
+bib_list = "names.txt"
+failed_files = "error_name.txt"
+outputFilePath = "bib_tug_dataset_full.parquet2"
 
+max_entries = 30000
+extract_abstract = False
+skip_total = 25
+skip_false = 0.4
 
+bib_files = open(bib_list).read().splitlines()
+err = open(failed_files, 'w')
 
-
-labels = ["author","journal","editor","volume","number","pages","month","year","doi", "pages","booktitle","publisher","series","comments" ,"notes","institution","bibsource"]
-
-parser = bibtexparser.bparser.BibTexParser(common_strings=True)
-
-bib_files= open("names.txt").read().splitlines()
-err = open("error_name.txt","w")
-
-
-outputFilePath = "bib_tug_dataset.parquet"
 writer = None
 
 titles = []
-for bib_file in bib_files:
-    print(len(titles))
-    if len(titles)>5000:
-        break
-    try:
-        with open("bibs/"+bib_file,encoding="utf-8") as bibtex_file:
-            bibtex_str = bibtex_file.read()
 
-        bib_database = bibtexparser.loads(bibtex_str, parser=parser)
-        print(bib_file)
+for bib_file in bib_files:
+    parser = bibtexparser.bparser.BibTexParser(common_strings=True)
+    print("Total entries: " , len(titles))
+    print("Processing ",bib_file)
+    entries = []
+    count = 0
+
+    if len(titles) > max_entries:
+        break
+
+    try:
+        with open("bibs/" + bib_file, encoding="utf-8") as bibtex_file:
+            bibtex_str = bibtex_file.read()
     except:
-        err.write(bib_file+"\n")
+        err.write(bib_file + "\n")
         err.flush()
         continue
 
+    bibtex_str = re.sub(r'  acknowledgement =.+\n', '', bibtex_str)
 
-    #pretty(bib_database.entries[0])
+    entry = []
+    Entries = []
+    write = False
 
+    flag = False
+    for line in bibtex_str.splitlines():
+        entry.append(line)
 
+        for each in ["@article", "@Article", "@inproceedings", "@Inproceedings"]:
+            if each in line:
+                if not flag:
+                    entry = "\n".join(entry[:-1])
+                    Entries.append(entry)
+                    entry = [line]
+                    flag = True
+
+        if line and flag:
+            if line[0] == "}" and len(entry) > 1:
+                entry = "\n".join(entry)
+                if "keywords = " in entry:
+                    if "abstract" in entry:
+                        Entries.append(entry)
+                entry = []
+
+    bibtex_str = "\n\n".join(Entries)
+
+    try:
+        bib_database = bibtexparser.loads(bibtex_str, parser=parser)
+    except:
+        err.write(bib_file + "\n")
+        err.flush()
+        continue
 
     for entry in bib_database.entries:
-        f = True
 
         '''Filtering entry by type'''
-        if entry["ENTRYTYPE"] in ["inproceedings","article"]:
+        if entry["ENTRYTYPE"].lower() in ["inproceedings", "article"]:
             parsed_entry = {"bib_file": bib_file}
             try:
                 parsed_entry["keywords"] = str(entry["keywords"])
+                if len(parsed_entry["keywords"]) < 50:
+                    continue
             except:
                 continue
 
             try:
                 parsed_entry["title"] = str(entry["title"])
+                parsed_entry["title"] = parsed_entry["title"].replace("{", "")
+                parsed_entry["title"] = parsed_entry["title"].replace("}", "")
                 if parsed_entry["title"] in titles:
                     continue
                 if detect(parsed_entry["title"]) not in ["en"]:
@@ -95,16 +129,28 @@ for bib_file in bib_files:
 
             try:
                 parsed_entry["abstract"] = str(entry["abstract"])
+                if len(parsed_entry["abstract"]) < 50:
+                    continue
+
             except:
                 try:
-                    1/0
-                    paper = Article(title=parsed_entry["title"])
-                    abstract = paper.get_abstract()
-                    if len(abstract)>100:
-                        parsed_entry["abstract"] = abstract
+                    if extract_abstract:
+                        if count < skip_total:
+                            paper = Article(title=parsed_entry["title"])
+                            abstract = paper.get_abstract()
+                            if len(abstract) > 500:
+                                parsed_entry["abstract"] = abstract
+
+                            else:
+                                count += skip_false
+                                continue
+                        else:
+                            count += skip_false
+                            continue
                     else:
                         continue
                 except:
+                    count += skip_false
                     continue
 
             for label in labels:
@@ -121,21 +167,19 @@ for bib_file in bib_files:
                     parsed_entry["url"] = ""
 
             try:
-                if int(parsed_entry["year"])<1970:
+                if int(parsed_entry["year"]) < 1900:
                     continue
             except:
                 pass
 
-            if f:
+            count += 1
+            titles.append(parsed_entry["title"])
+            entries.append(parsed_entry)
 
-                titles.append(parsed_entry["title"])
-                df = pd.DataFrame([parsed_entry,])
+    df = pd.DataFrame(entries)
 
-                if not df.empty:
-                                writer = append_to_parquet_table(
-                                    df, outputFilePath, writer)
+    if not df.empty:
+        writer = append_to_parquet_table(df, outputFilePath, writer)
 
 if writer:
     writer.close()
-
-
