@@ -32,12 +32,12 @@ def append_to_parquet_table(dataframe, filepath=None, writer=None):
     return writer
 
 
-labels = ["author", "journal", "editor", "volume", "number", "pages", "month", "year", "doi", "pages", "booktitle",
+labels = ["fullpaper","author", "journal", "editor", "volume", "number", "pages", "month", "year", "doi", "pages", "booktitle",
           "publisher", "series", "comments", "notes", "institution", "bibsource"]
 
 bib_list = "names.txt"
 failed_files = "error_name.txt"
-outputFilePath = "bib_tug_dataset_full.parquet2"
+outputFilePath = "bib_tug_dataset_full.parquet"
 
 max_entries = 30000
 extract_abstract = False
