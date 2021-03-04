@@ -27,7 +27,8 @@ from tensorflow.python.keras.models import Model, Sequential, model_from_json, l
 from tensorflow.python.keras.preprocessing.text import Tokenizer
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 
-
+from position_rank import position_rank
+from tokenizer import StanfordCoreNlpTokenizer
 
 class KeyModel:
     """ Main Model class
@@ -232,6 +233,21 @@ class BiLSTM (KeyModel):
         k = output_keywords[:n]
         return k, [0.0]*len(k)
 
+
+class PositionRankMod (KeyModel):
+    """
+    java -mx4g -cp "*" edu.stanford.nlp.pipeline.StanfordCoreNLPServer -port 9000 -timeout 15000
+    """
+    def __init__(self, weights=None, wiki=False):
+        self.tokenizer = StanfordCoreNlpTokenizer("http://localhost", port = 9000)
+        self.weights = weights
+        self.wiki = wiki
+
+    def get_keywords(self, text, n=10):
+        keyphrases_p = position_rank(text.split(), self.tokenizer, alpha=0.85, window_size=2, num_keyphrase=n, weights=self.weights,
+                                     wiki=self.wiki)
+        return list(map(list, zip(*keyphrases_p)))
+
 text = '''
    Over the past few years, there has been a strong and growing interest
    in faster network technologies such as FDDI and ATM. However, the
@@ -261,8 +277,11 @@ text = '''
 
 
 '''
-extractor = BiLSTM('C:/Users/dallal/Documents/GitHub/Keyphrase-Extraction-BiLSTM/model/model.json','C:/Users/dallal/Documents/GitHub/Keyphrase-Extraction-BiLSTM/model/model.h5','C:/Users/dallal/Documents/GitHub/Keyphrase-Extraction-BiLSTM/model/tokenizer.pickle')
+
+'''
+extractor = PositionRankMod ()
 k,w = extractor.get_keywords(text)
 print(k)
 print(w)
+'''
 
