@@ -13,27 +13,8 @@ import logging
 logging.getLogger("bibtexparser").setLevel(logging.WARNING)
 
 
-def append_to_parquet_table(dataframe, filepath=None, writer=None):
-    """Method writes/append dataframes in parquet format.
+from utils import append_to_parquet_table, labels, clean
 
-    This method is used to write pandas DataFrame as pyarrow Table in parquet format. If the methods is invoked
-    with writer, it appends dataframe to the already written pyarrow table.
-
-    :param dataframe: pd.DataFrame to be written in parquet format.
-    :param filepath: target file location for parquet file.
-    :param writer: ParquetWriter object to write pyarrow tables in parquet format.
-    :return: ParquetWriter object. This can be passed in the subsequenct method calls to append DataFrame
-        in the pyarrow Table
-    """
-    table = pa.Table.from_pandas(dataframe)
-    if writer is None:
-        writer = pq.ParquetWriter(filepath, table.schema)
-    writer.write_table(table=table)
-    return writer
-
-
-labels = ["fullpaper","author", "journal", "editor", "volume", "number", "pages", "month", "year", "doi", "pages", "booktitle",
-          "publisher", "series", "comments", "notes", "institution", "bibsource"]
 
 bib_list = "names.txt"
 failed_files = "error_name.txt"
@@ -115,9 +96,9 @@ for bib_file in bib_files:
                     continue
             except:
                 continue
-
+            parsed_entry["title"] = str(entry["title"])
             try:
-                parsed_entry["title"] = str(entry["title"])
+
                 parsed_entry["title"] = parsed_entry["title"].replace("{", "")
                 parsed_entry["title"] = parsed_entry["title"].replace("}", "")
                 if parsed_entry["title"] in titles:
@@ -138,7 +119,7 @@ for bib_file in bib_files:
                         if count < skip_total:
                             paper = Article(title=parsed_entry["title"])
                             abstract = paper.get_abstract()
-                            if len(abstract) > 500:
+                            if len(abstract) > 50:
                                 parsed_entry["abstract"] = abstract
 
                             else:
@@ -152,10 +133,10 @@ for bib_file in bib_files:
                 except:
                     count += skip_false
                     continue
-
+            parsed_entry["abstract"] = clean(parsed_entry["abstract"])
             for label in labels:
                 try:
-                    parsed_entry[label] = str(entry[label])
+                    parsed_entry[label] = clean(str(entry[label]))
                 except:
                     parsed_entry[label] = ""
             try:
@@ -167,10 +148,13 @@ for bib_file in bib_files:
                     parsed_entry["url"] = ""
 
             try:
-                if int(parsed_entry["year"]) < 1900:
-                    continue
+                int(parsed_entry["year"])
             except:
-                pass
+                try:
+                    if int(parsed_entry["year"][:4]):
+                        parsed_entry["year"] = parsed_entry["year"][:4]
+                except:
+                    parsed_entry["year"] = "0"
 
             count += 1
             titles.append(parsed_entry["title"])

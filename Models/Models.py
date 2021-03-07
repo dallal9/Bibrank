@@ -3,6 +3,9 @@ import logging
 import sys
 import subprocess
 
+from position_rank import position_rank
+from tokenizer import StanfordCoreNlpTokenizer
+
 import pke
 from keybert import KeyBERT
 
@@ -27,8 +30,7 @@ from tensorflow.python.keras.models import Model, Sequential, model_from_json, l
 from tensorflow.python.keras.preprocessing.text import Tokenizer
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 
-from position_rank import position_rank
-from tokenizer import StanfordCoreNlpTokenizer
+
 
 class KeyModel:
     """ Main Model class
