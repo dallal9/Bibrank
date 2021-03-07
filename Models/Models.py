@@ -54,6 +54,7 @@ class PKE (KeyModel):
     """
 
     def __init__(self, model_name, models=None, _df_counts=None):
+        self.model_name = "PKE_"+model_name
         if model_name.lower() == "topicrank":
             self.model = pke.unsupervised.TopicRank()
         elif model_name.lower() == "textrank":
@@ -111,7 +112,7 @@ class PKE (KeyModel):
 class keyBert (KeyModel):
     def __init__(self):
         self.model = KeyBERT('distilbert-base-nli-mean-tokens')
-
+        self.model_name = "keyBert"
     def get_keywords(self, text, n=10):
         try:
             keyphrases, weights = list(map(list, zip(*self.model.extract_keywords(text, top_n=n))))
@@ -126,7 +127,7 @@ class keyBert (KeyModel):
 class Textacy (KeyModel):
     def __init__(self, model_name):
         self.nlp = en_core_web_sm.load()
-        self.model_name = model_name
+        self.model_name = "Textacy_"+model_name
 
     def get_keywords(self, text, n=10):
         try:
@@ -135,11 +136,11 @@ class Textacy (KeyModel):
             raise Exception("Couldn't load Spacy model")
 
         try:
-            if self.model_name in "sgrank":
+            if "sgrank" in self.model_name :
                 keyphrases, weights = list(map(list, zip(*sgrank(doc, topn=n))))
-            elif self.model_name in "scake":
+            elif "scake" in self.model_name:
                 keyphrases, weights = list(map(list, zip(*scake(doc, topn=n))))
-            elif self.model_name in "scake":
+            elif "textrank" in self.model_name:
                 keyphrases, weights = list(map(list, zip(*textrank(doc, topn=n))))
             else:
                 raise Exception("{} is not a model name defined in textacy library".format(self.model_name))
@@ -159,6 +160,7 @@ class BertEmbedRank (KeyModel):
         bert-serving-start -model_dir /tmp/english_L-12_H-768_A-12/ -num_worker=4 (to start the service)
         bert-serving-start -model_dir C:/Users/dallal/Documents/GitHub/unsupervised_keyword_extraction/cased_L-12_H-768_A-12/ -num_worker=4
         """
+        self.model_name = "BertEmbedRank"
         if not bert_path:
             bert_path = "C:/Users/dallal/Documents/GitHub/unsupervised_keyword_extraction/cased_L-12_H-768_A-12/"
         #try:
@@ -207,7 +209,7 @@ class BiLSTM (KeyModel):
         with open(json_config_f) as json_file:
             json_config = json_file.read()
         self.model = model_from_json(json_config)
-
+        self.model_name = "BiLSTM"
         # Load weights
         self.model.load_weights(model_f)
 
@@ -244,7 +246,7 @@ class PositionRankMod (KeyModel):
         self.tokenizer = StanfordCoreNlpTokenizer("http://localhost", port = 9000)
         self.weights = weights
         self.wiki = wiki
-
+        self.model_name = "PositionRankMod"
     def get_keywords(self, text, n=10):
         keyphrases_p = position_rank(text.split(), self.tokenizer, alpha=0.85, window_size=2, num_keyphrase=n, weights=self.weights,
                                      wiki=self.wiki)

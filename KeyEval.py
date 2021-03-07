@@ -4,6 +4,7 @@ import json
 import sys
 sys.path.append("Models/")
 from Models import *
+model = PKE("textrank")
 
 import time
 
@@ -101,14 +102,14 @@ def get_all_scores (gold_keywords, predicted_keywords, text=None, adjust=False):
                 if each in text:
                     adjusted_gold.append(each)
             if len(adjusted_gold) < 1:
-                adjusted_metrics = [0.0]*4
+                adjusted_metrics = []
             else:
                 adjusted_metrics = get_scores(adjusted_gold, predicted_keywords)
 
     return metrics, adjusted_metrics
 
 
-def get_key_abs (filepath,year1=1900,year2=2020, bib_files=[], types=[], journals=[], count=None):
+def get_key_abs(filepath,year1=1900,year2=2020, bib_files=[], types=[], journals=[], count=None):
     """{'science-history-journals': 'Journals on the history, philosophy, and popularization of mathematics and
        science', 'compsci': 'Computer science journals and topics', 'acm': 'ACM Transactions', 'cryptography':
        'Cryptography', 'fonts': 'Fonts and typography', 'ieee': 'IEEE journals', 'computational': 'Computational/quantum
@@ -167,38 +168,51 @@ def get_key_abs (filepath,year1=1900,year2=2020, bib_files=[], types=[], journal
     return processed_keywords, abstracts
 
 
-def eval_file (filepath, year1=1900, year2=2020, bib_files=[], types=[], journals=[], count=None):
-    #add json input/ output
-    #a way to test multiple models and features
-    #output format
+def eval_file(filepath, year1=1900, year2=2020, bib_files=[], types=[], journals=[], limit=None,
+              outputpath="output.json"):
 
-    keywords_gold, abstracts = get_key_abs(filepath, year1, year2, bib_files, types, journals, 10)
+    t1 = time.time()
+    keywords_gold, abstracts = get_key_abs(filepath, year1, year2, bib_files, types, journals, limit)
 
+    model_param = []
     model = keyBert()
 
     all_scores = []
+    all_scores_adjust = []
     T0 = 0.0
     T1 = 0.0
     for i in range(len(keywords_gold)):
         t3 = time.time()
         predicted_keywords = model.get_keywords(abstracts[i])
         t4 = time.time()
-        scores = get_all_scores(keywords_gold[i], predicted_keywords[0], abstracts[i])
+        scores = get_all_scores(keywords_gold[i], predicted_keywords[0], abstracts[i], adjust=True)
         t5 = time.time()
         all_scores.append(scores[0])
+        if scores[1]:
+            all_scores_adjust.append(scores[1])
         T0 += (t4 - t3)
         T1 += (t5 - t4)
     all_scores = pd.DataFrame(all_scores)
-    #print(all_scores.shape)
-    #print(all_scores.mean(axis=0))
-    print(T0)
-    print(T1)
-
-def run_evaluation ()
-t1 = time.time()
-eval_file("C:/dallal/MScTartu/Courses/spring21/Thesis/dataset/TUG bibliography archive/bib_tug_dataset_full.parquet")
-t2 = time.time()
+    all_scores_adjust = pd.DataFrame(all_scores_adjust)
 
 
-print(t2-t1)
+    counts = [len(all_scores), len(all_scores_adjust)]
+
+    all_scores = list(all_scores.mean(axis=0))
+    all_scores_adjust = list(all_scores_adjust.mean(axis=0))
+    t = time.time() - t1
+    output = {"file_path": filepath, "year1": year1, "year2": year2, "bib_files": bib_files,
+              "types": types, "journals": journals, "limit": limit,
+              "model_name": model.model_name, "model_param": model_param, "counts": counts,
+              "scores":all_scores, "scores_adjusted": all_scores_adjust,
+              "time": t }
+    f = open(outputpath, "a")
+    json.dump(output, f)
+    f.write("\n")
+
+
+eval_file("C:/dallal/MScTartu/Courses/spring21/Thesis/dataset/TUG bibliography archive/bib_tug_dataset_full.parquet", limit = 10)
+
+
+
 
