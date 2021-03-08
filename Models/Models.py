@@ -13,7 +13,7 @@ import spacy
 import en_core_web_sm
 from textacy.ke import sgrank
 from textacy.ke import scake
-from textacy.ke import textrank
+from textacy.ke import textrank, yake
 
 from bert_serving.client import BertClient
 path_uke = "C:/Users/dallal/Documents/GitHub/unsupervised_keyword_extraction/" #https://github.com/AnzorGozalishvili/unsupervised_keyword_extraction
@@ -142,6 +142,8 @@ class Textacy (KeyModel):
                 keyphrases, weights = list(map(list, zip(*scake(doc, topn=n))))
             elif "textrank" in self.model_name:
                 keyphrases, weights = list(map(list, zip(*textrank(doc, topn=n))))
+            elif "yake" in self.model_name:
+                keyphrases, weights = list(map(list, zip(*yake(doc, topn=n))))
             else:
                 raise Exception("{} is not a model name defined in textacy library".format(self.model_name))
         except:
@@ -201,7 +203,9 @@ class BertEmbedRank (KeyModel):
     def exit(self):
         self.p.terminate()
 
-
+"""
+refactor
+"""
 class BiLSTM (KeyModel):
     def __init__(self, json_config_f, model_f, tokenizer_f):
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -237,6 +241,9 @@ class BiLSTM (KeyModel):
         k = output_keywords[:n]
         return k, [0.0]*len(k)
 
+"""
+refactor
+"""
 
 class PositionRankMod (KeyModel):
     """
@@ -283,7 +290,7 @@ text = '''
 '''
 
 '''
-extractor = PositionRankMod ()
+extractor = Textacy ("yake")
 k,w = extractor.get_keywords(text)
 print(k)
 print(w)

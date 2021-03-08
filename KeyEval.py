@@ -2,11 +2,13 @@ import pandas as pd
 from Datasets.utils import read_parquet, get_bib_info, clean
 import json
 import sys
-sys.path.append("Models/")
-from Models import *
-model = PKE("textrank")
 
 import time
+import csv
+import random
+
+sys.path.append("Models/")
+from Models import *
 
 def mask(text1, text2):
     """
@@ -169,7 +171,7 @@ def get_key_abs(filepath,year1=1900,year2=2020, bib_files=[], types=[], journals
 
 
 def eval_file(filepath, year1=1900, year2=2020, bib_files=[], types=[], journals=[], limit=None,
-              outputpath="output.json"):
+              outputpaths= ["output.json","output.tsv"]):
 
     t1 = time.time()
     keywords_gold, abstracts = get_key_abs(filepath, year1, year2, bib_files, types, journals, limit)
@@ -201,17 +203,25 @@ def eval_file(filepath, year1=1900, year2=2020, bib_files=[], types=[], journals
     all_scores = list(all_scores.mean(axis=0))
     all_scores_adjust = list(all_scores_adjust.mean(axis=0))
     t = time.time() - t1
-    output = {"file_path": filepath, "year1": year1, "year2": year2, "bib_files": bib_files,
+    label = ''.join(random.choice('1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM')for x in range(8))
+
+    output = {"label": label, "file_path": filepath, "year1": year1, "year2": year2, "bib_files": bib_files,
               "types": types, "journals": journals, "limit": limit,
               "model_name": model.model_name, "model_param": model_param, "counts": counts,
               "scores":all_scores, "scores_adjusted": all_scores_adjust,
               "time": t }
-    f = open(outputpath, "a")
-    json.dump(output, f)
-    f.write("\n")
+    f1 = open(outputpaths[0], "a")
+    json.dump(output, f1)
+    f1.write("\n")
+
+    with open(outputpaths[1], 'a') as out_file:
+        tsv_writer = csv.writer(out_file, delimiter='\t')
+        tsv_writer.writerow([label, model.model_name, filepath, str(counts[0]), str(counts[1]),
+        str(all_scores[0]), str(all_scores[1]), str(all_scores[2]), str(all_scores[3]),
+        str(all_scores_adjust[0]), str(all_scores_adjust[1]), str(all_scores_adjust[2]), str(all_scores_adjust[3])])
 
 
-eval_file("C:/dallal/MScTartu/Courses/spring21/Thesis/dataset/TUG bibliography archive/bib_tug_dataset_full.parquet", limit = 10)
+eval_file("Datasets/DataFiles/bib_tug_dataset_full.parquet", limit=10)
 
 
 
