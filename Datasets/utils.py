@@ -62,7 +62,6 @@ def get_bib_info (file="bib.html"):
                 text = re.sub(' +', ' ',a.text.strip().replace('\n', ' '))
                 tables[label].append({a["href"].split("/")[-1]:text})
 
-
     return tables,Names
 
 

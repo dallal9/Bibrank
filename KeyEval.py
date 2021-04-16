@@ -9,6 +9,7 @@ import random
 
 sys.path.append("Models/")
 from Models import *
+from position_rank import get_weights
 
 def mask(text1, text2):
     """
@@ -111,7 +112,7 @@ def get_all_scores (gold_keywords, predicted_keywords, text=None, adjust=False):
     return metrics, adjusted_metrics
 
 
-def get_key_abs(filepath,year1=1900,year2=2020, bib_files=[], types=[], journals=[], count=None):
+def get_key_abs(filepath,year1=1900,year2=2020, bib_files=[], types=[], journals=[], count=None, rand=False):
     """{'science-history-journals': 'Journals on the history, philosophy, and popularization of mathematics and
        science', 'compsci': 'Computer science journals and topics', 'acm': 'ACM Transactions', 'cryptography':
        'Cryptography', 'fonts': 'Fonts and typography', 'ieee': 'IEEE journals', 'computational': 'Computational/quantum
@@ -128,6 +129,10 @@ def get_key_abs(filepath,year1=1900,year2=2020, bib_files=[], types=[], journals
 
     df = read_parquet(filepath)
 
+    #df =df[df["bib_file"]=="ibmjrd.bib"]
+    #print(df.columns)
+
+    #exit()
 
     if bib_files:
         df = df[df["bib_file"].isin(bib_files)]
@@ -140,16 +145,23 @@ def get_key_abs(filepath,year1=1900,year2=2020, bib_files=[], types=[], journals
 
     if journals:
         df = df[df["journal"].isin(journals)]
+
+    print(df["year"].value_counts())
+    # asd
     # year
     df["year"] = df["year"].astype("int")
     df = df[df["year"] >= year1]
     df = df[df["year"] <= year2]
 
-    df = df[:count]
+    if rand and count:
+        df = df.sample(n=count)
+    else:
+        df = df[:count]
 
     keywords = df["keywords"].tolist()
     abstracts = df["abstract"].tolist()
-
+    print(df.shape)
+    print(df["year"].value_counts())
     processed_keywords = []
     for i in range(len(keywords)):
         if ";" in keywords[i]:
@@ -170,15 +182,27 @@ def get_key_abs(filepath,year1=1900,year2=2020, bib_files=[], types=[], journals
     return processed_keywords, abstracts
 
 
-def eval_file(filepath, year1=1900, year2=2020, bib_files=[], types=[], journals=[], limit=None,
+def eval_file(filepath, year1=1900, year2=2020, bib_files=[], types=[], journals=[], limit=None, rand=False, log=True,
               outputpaths= ["output.json","output.tsv"]):
 
     t1 = time.time()
-    keywords_gold, abstracts = get_key_abs(filepath, year1, year2, bib_files, types, journals, limit)
+    keywords_gold, abstracts = get_key_abs(filepath, year1, year2, bib_files, types, journals, limit, rand)
 
-    model_param = []
-    model = keyBert()
+    keywords_gold_w, t = get_key_abs("Datasets/DataFiles/bib_tug_dataset_full.parquet", year1=1996, year2=1996,
+                                            types=["compsci"])
+    eaf
+    #weights = get_weights(keywords_gold_w)
 
+    #model_param = ["weights  1996"]
+    #model = PositionRankMod(weights=weights)
+
+    model = BertEmbedRank()
+    #model.create_doc_frequency(t)
+    model_param = [""]
+    #model = PKE("tfidf", frequency_path="C:/Users/dallal/Anaconda3/Lib/site-packages/pke/models/temp/output.txt")
+
+    #model_param = ["scibert_scivocab_uncased"]
+    #model = keyBert()
     all_scores = []
     all_scores_adjust = []
     T0 = 0.0
@@ -209,20 +233,30 @@ def eval_file(filepath, year1=1900, year2=2020, bib_files=[], types=[], journals
               "types": types, "journals": journals, "limit": limit,
               "model_name": model.model_name, "model_param": model_param, "counts": counts,
               "scores":all_scores, "scores_adjusted": all_scores_adjust,
-              "time": t }
-    f1 = open(outputpaths[0], "a")
-    json.dump(output, f1)
-    f1.write("\n")
+              "time": t, "random":rand }
+    if log:
+        f1 = open(outputpaths[0], "a")
+        json.dump(output, f1)
+        f1.write("\n")
 
-    with open(outputpaths[1], 'a') as out_file:
-        tsv_writer = csv.writer(out_file, delimiter='\t')
-        tsv_writer.writerow([label, model.model_name, filepath, str(counts[0]), str(counts[1]),
-        str(all_scores[0]), str(all_scores[1]), str(all_scores[2]), str(all_scores[3]),
-        str(all_scores_adjust[0]), str(all_scores_adjust[1]), str(all_scores_adjust[2]), str(all_scores_adjust[3])])
+        with open(outputpaths[1], 'a', newline='') as out_file:
+            tsv_writer = csv.writer(out_file, delimiter='\t')
+            tsv_writer.writerow([label, model.model_name, filepath, str(counts[0]), str(counts[1]),
+            str(all_scores[0]), str(all_scores[1]), str(all_scores[2]), str(all_scores[3]),
+            str(all_scores_adjust[0]), str(all_scores_adjust[1]), str(all_scores_adjust[2]), str(all_scores_adjust[3])])
+
+    return all_scores, all_scores_adjust
 
 
-eval_file("Datasets/DataFiles/bib_tug_dataset_full.parquet", limit=10)
+o1,o2 = eval_file("Datasets/DataFiles/bib_tug_dataset_full.parquet", types=[],year1=1997,year2=2001, log=True)
+
+print(o1, o2)
 
 
+#t1,t2 = eval_file("Datasets/DataFiles/bib_tug_dataset_full.parquet",bib_files=["ibmjrd.bib"], limit=50, year1=1990, year2=1990, rand=True, log=True)
 
+'''
+Position Rank
+Try with weights mixed with meta-data
+'''
 

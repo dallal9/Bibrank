@@ -7,6 +7,8 @@ from position_rank import position_rank
 from tokenizer import StanfordCoreNlpTokenizer
 
 import pke
+from pke.utils import compute_document_frequency
+
 from keybert import KeyBERT
 
 import spacy
@@ -25,10 +27,10 @@ import pickle
 import nltk
 from nltk.corpus import stopwords
 
-import silence_tensorflow.auto
-from tensorflow.python.keras.models import Model, Sequential, model_from_json, load_model
-from tensorflow.python.keras.preprocessing.text import Tokenizer
-from tensorflow.python.keras.preprocessing.sequence import pad_sequences
+# import silence_tensorflow.auto
+# from tensorflow.python.keras.models import Model, Sequential, model_from_json, load_model
+# from tensorflow.python.keras.preprocessing.text import Tokenizer
+# from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 
 
 
@@ -53,7 +55,9 @@ class PKE (KeyModel):
     """Class for pke models developed by Florian Boudin
     """
 
-    def __init__(self, model_name, models=None, _df_counts=None):
+    def __init__(self, model_name, models=None, _df_counts=None, frequency_path = None):
+        self.df = None
+
         self.model_name = "PKE_"+model_name
         if model_name.lower() == "topicrank":
             self.model = pke.unsupervised.TopicRank()
@@ -69,11 +73,14 @@ class PKE (KeyModel):
             self.model = pke.unsupervised.MultipartiteRank()
         elif model_name.lower() == "tfidf":
             self.model = pke.unsupervised.TfIdf()
+            if frequency_path:
+                self.df = pke.load_document_frequency_file(input_file=frequency_path)
+
         elif model_name.lower() == "kpminer":
             self.model = pke.unsupervised.KPMiner()
         elif model_name.lower() == "yake":
             self.model = pke.unsupervised.YAKE()
-        elif model_name.lower() == "Kea":
+        elif model_name.lower() == "kea":
             self.model = pke.supervised.Kea()
         elif model_name.lower() == "wingnus":
             self.model = pke.supervised.WINGNUS()
@@ -86,6 +93,7 @@ class PKE (KeyModel):
 
         if _df_counts:
             self.model._df_counts = _df_counts
+
         else:
             self._df_counts = os.path.join(self.model._models, "df-semeval2010.tsv")
 
@@ -97,7 +105,10 @@ class PKE (KeyModel):
         self.model.candidate_selection()
 
         # candidate weighting, in the case of TopicRank: using a random walk algorithm
-        self.model.candidate_weighting()
+        if not self.df:
+            self.model.candidate_weighting()
+        else:
+            self.model.candidate_weighting(df = self.df)
 
         # N-best selection, keyphrases contains the 10 highest scored candidates as
         # (keyphrase, score) tuples
@@ -108,10 +119,18 @@ class PKE (KeyModel):
             keyphrases, weights = None, None
         return keyphrases, weights
 
+    def create_doc_frequency(self, texts, outpath= "output.txt"):
+        path = os.path.join(os.path.dirname(pke.__file__), 'models/temp/')
+        for i in range(len(texts)):
+            fpath = os.path.join(path,"f"+str(i)+".txt")
+            open(fpath,"w",encoding="utf-8").write(texts[i])
+        opath = os.path.join(path, outpath)
+        compute_document_frequency(path, opath,"txt")
+
 
 class keyBert (KeyModel):
     def __init__(self):
-        self.model = KeyBERT('distilbert-base-nli-mean-tokens')
+        self.model = KeyBERT ('allenai/scibert_scivocab_uncased') #('distilbert-base-nli-mean-tokens')
         self.model_name = "keyBert"
     def get_keywords(self, text, n=10):
         try:

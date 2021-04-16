@@ -20,6 +20,21 @@ def get_cat(text):
     except:
         return []
 
+def get_weights(keywords_list):
+    words = {}
+    for keywords in keywords_list:
+        for keyword in keywords:
+            try:
+                words[keyword] += 1
+            except:
+                words[keyword] = 1
+    max_key = max(words, key=words.get)
+    factor = words[max_key]
+
+    for k in words:
+        words[k] = words[k] / factor
+    return words
+
 
 def position_rank(text, tokenizer, alpha=0.85, window_size=6, num_keyphrase=10, lang="en",weights={},wiki=False):
     """Compute position rank score.
@@ -114,8 +129,11 @@ def position_rank(text, tokenizer, alpha=0.85, window_size=6, num_keyphrase=10, 
     word_with_score_list = [(word, s_vec[word2idx[stem(word)]]) for word in original_words]
 
     for phrase in phrases:
-        total_score = sum([s_vec[word2idx[stem(word)]] for word in phrase.split("_")])
-        
+        try:
+            total_score = sum([s_vec[word2idx[stem(word)]] for word in phrase.split("_")])
+        except:
+            pass
+
         for word in phrase.split("_"):
             try:
                 total_score+=weights[word.lower()]
@@ -125,8 +143,11 @@ def position_rank(text, tokenizer, alpha=0.85, window_size=6, num_keyphrase=10, 
             for cat  in wiki_list:
                 if word.lower() in cat:
                     total_score*=2
-                
-        word_with_score_list.append((phrase, total_score))
+        try:
+            word_with_score_list.append((phrase, total_score))
+        except:
+            word_with_score_list.append((phrase, 0.0))
+
 
     
     sort_list = np.argsort([t[1] for t in word_with_score_list])
