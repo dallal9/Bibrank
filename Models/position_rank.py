@@ -5,6 +5,8 @@ import numpy as np
 import copy
 from collections import Counter
 from mediawiki import MediaWiki
+from nltk.stem import WordNetLemmatizer
+
 
 def get_cat(text):
     try:
@@ -59,14 +61,19 @@ def position_rank(text, tokenizer, alpha=0.85, window_size=6, num_keyphrase=10, 
       Keyphrase list. Length of list is decided by 'num_keyphrase' param.
 
     """
+    lemmatizer = WordNetLemmatizer()
     if lang == "en":
-        stem = porter.stem
+        stem =  porter.stem #lemmatizer.lemmatize #
     else:
         stem = lambda word: word
     
     wiki_list=[]
-    
-    title,sentence=text[0]," ".join(text)
+
+    try:
+        title,sentence=text[0]," ".join(text)
+    except:
+        title, sentence =""," ".join(text)
+
     
     if wiki:
        wiki_list =  get_cat(title)
@@ -168,6 +175,7 @@ def position_rank(text, tokenizer, alpha=0.85, window_size=6, num_keyphrase=10, 
             stemmed_keyphrase_list.append(stemmed_keyphrase)
         if len(keyphrase_list) >= num_keyphrase:
             break
+
     return keyphrase_list
 
 

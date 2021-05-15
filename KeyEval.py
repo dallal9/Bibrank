@@ -6,6 +6,7 @@ import sys
 import time
 import csv
 import random
+from tqdm import tqdm
 
 sys.path.append("Models/")
 from Models import *
@@ -135,7 +136,10 @@ def get_key_abs(filepath,year1=1900,year2=2020, bib_files=[], types=[], journals
     #exit()
 
     if bib_files:
-        df = df[df["bib_file"].isin(bib_files)]
+        try:
+            df = df[df["bib_file"].isin(bib_files)]
+        except:
+            df = df[df["bibsource"].isin(bib_files)]
 
     if types:
         types_list = []
@@ -146,12 +150,15 @@ def get_key_abs(filepath,year1=1900,year2=2020, bib_files=[], types=[], journals
     if journals:
         df = df[df["journal"].isin(journals)]
 
-    print(df["year"].value_counts())
-    # asd
+
+
     # year
-    df["year"] = df["year"].astype("int")
-    df = df[df["year"] >= year1]
-    df = df[df["year"] <= year2]
+    try:
+        df["year"] = df["year"].astype("int")
+        df = df[df["year"] >= year1]
+        df = df[df["year"] <= year2]
+    except:
+        pass
 
     if rand and count:
         df = df.sample(n=count)
@@ -160,6 +167,8 @@ def get_key_abs(filepath,year1=1900,year2=2020, bib_files=[], types=[], journals
 
     keywords = df["keywords"].tolist()
     abstracts = df["abstract"].tolist()
+    c1,c2=0.0,0.0
+
     print(df.shape)
     print(df["year"].value_counts())
     processed_keywords = []
@@ -168,6 +177,8 @@ def get_key_abs(filepath,year1=1900,year2=2020, bib_files=[], types=[], journals
             keyword = keywords[i].split(";")
         elif "," in keywords[i]:
             keyword = keywords[i].split(",")
+        elif "\t" in keywords[i]:
+            keyword = keywords[i].split("\t")
         else:
             keyword = keywords[i].split(" to")
 
@@ -179,6 +190,8 @@ def get_key_abs(filepath,year1=1900,year2=2020, bib_files=[], types=[], journals
             else:
                 new.append(clean(key))
         processed_keywords.append(new)
+
+
     return processed_keywords, abstracts
 
 
@@ -187,31 +200,67 @@ def eval_file(filepath, year1=1900, year2=2020, bib_files=[], types=[], journals
 
     t1 = time.time()
     keywords_gold, abstracts = get_key_abs(filepath, year1, year2, bib_files, types, journals, limit, rand)
+    #
+    # keywords_gold_w, t = get_key_abs("Datasets/DataFiles/bib_tug_dataset_full.parquet", year1=1980, year2=1986, types=["compsci"])
+    #
+    # weights = get_weights(keywords_gold_w)
 
-    keywords_gold_w, t = get_key_abs("Datasets/DataFiles/bib_tug_dataset_full.parquet", year1=1996, year2=1996,
-                                            types=["compsci"])
-    eaf
-    #weights = get_weights(keywords_gold_w)
-
-    #model_param = ["weights  1996"]
-    #model = PositionRankMod(weights=weights)
-
-    model = BertEmbedRank()
+    model_param = ["n-gram range 1,3"]
+    #model = PositionRankMod(weights=None)
+    #model1 = PositionRankMod(weights=weights)
+    model = keyBert()
+    #model2 = Textacy("yake")
     #model.create_doc_frequency(t)
-    model_param = [""]
+    #model3 = Textacy("textrank")
+    #model_param = [""]
     #model = PKE("tfidf", frequency_path="C:/Users/dallal/Anaconda3/Lib/site-packages/pke/models/temp/output.txt")
 
     #model_param = ["scibert_scivocab_uncased"]
-    #model = keyBert()
+
     all_scores = []
     all_scores_adjust = []
     T0 = 0.0
     T1 = 0.0
-    for i in range(len(keywords_gold)):
+
+    for i in tqdm(range(len(keywords_gold))):
+
         t3 = time.time()
-        predicted_keywords = model.get_keywords(abstracts[i])
+
+        predicted_keywords = model.get_keywords(abstracts[i], n =8)
+        print(predicted_keywords)
+        input(">")
+        #predicted_keywords1 = model1.get_keywords(abstracts[i],  n =8)
+        #predicted_keywords2 = model2.get_keywords(abstracts[i],  n =8)
+        #predicted_keywords3 = model3.get_keywords(abstracts[i],  n =8)
+
+
         t4 = time.time()
-        scores = get_all_scores(keywords_gold[i], predicted_keywords[0], abstracts[i], adjust=True)
+        try:
+            scores = get_all_scores(keywords_gold[i], predicted_keywords[0], abstracts[i], adjust=True)
+            #scores1 = get_all_scores(keywords_gold[i], predicted_keywords1[0], abstracts[i], adjust=True)
+            #scores2 = get_all_scores(keywords_gold[i], predicted_keywords2[0], abstracts[i], adjust=True)
+            #scores3 = get_all_scores(keywords_gold[i], predicted_keywords3[0], abstracts[i], adjust=True)
+        except:
+            scores = [[0.0, 0.0, 0.0,0.0] , [0.0, 0.0, 0.0,0.0]]
+            #scores1 = [[0.0, 0.0, 0.0,0.0] , [0.0, 0.0, 0.0,0.0]]
+
+        # try:
+        #     if scores1[1][0] >  scores[1][0]:
+        #         print(abstracts[i])
+        #         print(keywords_gold[i])
+        #
+        #         print(predicted_keywords[0], scores[1][0])
+        #         print(predicted_keywords1[0], scores1[1][0])
+        #         print(predicted_keywords2[0], scores2[1][0])
+        #         print(predicted_keywords3[0], scores3[1][0])
+        #         for each in predicted_keywords1[0]:
+        #             if each  not in predicted_keywords and each in keywords_gold[i]:
+        #                 print(each)
+        #         input("?")
+        #
+        # except:
+        #     pass
+
         t5 = time.time()
         all_scores.append(scores[0])
         if scores[1]:
@@ -248,7 +297,7 @@ def eval_file(filepath, year1=1900, year2=2020, bib_files=[], types=[], journals
     return all_scores, all_scores_adjust
 
 
-o1,o2 = eval_file("Datasets/DataFiles/bib_tug_dataset_full.parquet", types=[],year1=1997,year2=2001, log=True)
+o1,o2 = eval_file("Datasets/DataFiles/bib_tug_dataset_full.parquet", year1=1988, year2=2020, types=["compsci"] , log=True)
 
 print(o1, o2)
 

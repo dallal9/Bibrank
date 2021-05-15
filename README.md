@@ -1,1 +1,2 @@
-# Keyphrase Extraction Project
+# BibRank
+## Automatic Keyphrase Extraction Platform Using Metadata

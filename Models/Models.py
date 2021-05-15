@@ -134,7 +134,7 @@ class keyBert (KeyModel):
         self.model_name = "keyBert"
     def get_keywords(self, text, n=10):
         try:
-            keyphrases, weights = list(map(list, zip(*self.model.extract_keywords(text, top_n=n))))
+            keyphrases, weights = list(map(list, zip(*self.model.extract_keywords(text,keyphrase_ngram_range=(1, 3), top_n=n))))
 
         except:
             logging.warning("model was not able to retrieve keywords")
