@@ -1,10 +1,9 @@
 # Datasets 
 
 
-| Dataset      | Source                                                                               | Files              | \# of docs                       | Type                     | link                                                                                                                                   |
-| ------------ | ------------------------------------------------------------------------------------ | ------------------ | -------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Bib dataset  | Parsed from<br>TUG bibliography archive                                              | Parquet format     | 18,193                           | Abstracts<br>Meta-data   | [https://github.com/dallal9/keyphrase/tree/main/Datasets/DataFiles](https://github.com/dallal9/keyphrase/tree/main/Datasets/DataFiles) |
-| Text Dataset | Parsed from Keyphrase datasets:<br>\- NUS<br>\- ACM<br>\- KDD<br>\- WWW<br>\- Inspec | Parquet format<br> | 6,600<br>train, validation, test | Abstracts<br>Full papers | [https://github.com/dallal9/keyphrase/tree/main/Datasets/DataFiles](https://github.com/dallal9/keyphrase/tree/main/Datasets/DataFiles) |
+| Dataset      | Source                                                                               | Files              | \# of docs                       | Type                    | ------------ | ------------------------------------------------------------------------------------ | ------------------ | -------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Bib dataset  | Parsed from<br>TUG bibliography archive                                              | Parquet format     | 18,193                           | Abstracts<br>Meta-data   |
+| Text Dataset | Parsed from Keyphrase datasets:<br>\- NUS<br>\- ACM<br>\- KDD<br>\- WWW<br>\- Inspec | Parquet format<br> | 6,600<br>train, validation, test | Abstracts<br>Full papers |
 
 The dataset has 18,193 processed document. Each entry has 22 attributes. The list of attributes represents values that appear in a bib record.
 
