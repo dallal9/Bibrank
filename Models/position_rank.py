@@ -38,7 +38,7 @@ def get_weights(keywords_list):
     return words
 
 
-def position_rank(text, tokenizer, alpha=0.85, window_size=6, num_keyphrase=10, lang="en",weights={},wiki=False):
+def position_rank_mod(text, tokenizer, alpha=0.85, window_size=6, num_keyphrase=10, lang="en",weights={},wiki=False):
     """Compute position rank score.
 
     Position rank is a method for extracting keyphrase from sentence.

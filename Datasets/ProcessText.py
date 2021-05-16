@@ -133,8 +133,8 @@ def process_dataset(labels_json, text_path, file_ext, dataset_name, text_type, s
 """
 parameters
 """
-labels_json = "C:/dallal/MScTartu/Courses/spring21/Thesis/dataset/ake-datasets/datasets/ACM/references/test.author.json"
-text_path = "C:/dallal/MScTartu/Courses/spring21/Thesis/dataset/ake-datasets/datasets/ACM/src/all/"
+labels_json = "dataset/ake-datasets/datasets/ACM/references/test.author.json"
+text_path = "dataset/ake-datasets/datasets/ACM/src/all/"
 file_ext = ".txt"
 dataset_name = "ACM"
 text_type = "fullpaper"

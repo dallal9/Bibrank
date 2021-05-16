@@ -195,27 +195,24 @@ def get_key_abs(filepath,year1=1900,year2=2020, bib_files=[], types=[], journals
     return processed_keywords, abstracts
 
 
-def eval_file(filepath, year1=1900, year2=2020, bib_files=[], types=[], journals=[], limit=None, rand=False, log=True,
-              outputpaths= ["output.json","output.tsv"]):
+def eval_file(filepath, model, year1=1900, year2=2020, bib_files=[], types=[], journals=[], limit=None, rand=False, log=True,
+              model_param = "",outputpaths= ["output.json","output.tsv"], bib_weights = {}):
 
     t1 = time.time()
+
+
     keywords_gold, abstracts = get_key_abs(filepath, year1, year2, bib_files, types, journals, limit, rand)
-    #
-    # keywords_gold_w, t = get_key_abs("Datasets/DataFiles/bib_tug_dataset_full.parquet", year1=1980, year2=1986, types=["compsci"])
-    #
-    # weights = get_weights(keywords_gold_w)
 
-    model_param = ["n-gram range 1,3"]
-    #model = PositionRankMod(weights=None)
-    #model1 = PositionRankMod(weights=weights)
-    model = keyBert()
-    #model2 = Textacy("yake")
-    #model.create_doc_frequency(t)
-    #model3 = Textacy("textrank")
-    #model_param = [""]
-    #model = PKE("tfidf", frequency_path="C:/Users/dallal/Anaconda3/Lib/site-packages/pke/models/temp/output.txt")
+    if bib_weights:
+        keywords_gold_w, t = get_key_abs(filepath=bib_weights["dataset"], year1 = bib_weights["year1"], year2= bib_weights["year2"], types = bib_weights["types"])
 
-    #model_param = ["scibert_scivocab_uncased"]
+        weights = get_weights(keywords_gold_w)
+
+        model = BibRank(weights)
+
+
+
+
 
     all_scores = []
     all_scores_adjust = []
@@ -226,40 +223,14 @@ def eval_file(filepath, year1=1900, year2=2020, bib_files=[], types=[], journals
 
         t3 = time.time()
 
-        predicted_keywords = model.get_keywords(abstracts[i], n =8)
-        print(predicted_keywords)
-        input(">")
-        #predicted_keywords1 = model1.get_keywords(abstracts[i],  n =8)
-        #predicted_keywords2 = model2.get_keywords(abstracts[i],  n =8)
-        #predicted_keywords3 = model3.get_keywords(abstracts[i],  n =8)
-
+        predicted_keywords = model.get_keywords(abstracts[i])
 
         t4 = time.time()
         try:
             scores = get_all_scores(keywords_gold[i], predicted_keywords[0], abstracts[i], adjust=True)
-            #scores1 = get_all_scores(keywords_gold[i], predicted_keywords1[0], abstracts[i], adjust=True)
-            #scores2 = get_all_scores(keywords_gold[i], predicted_keywords2[0], abstracts[i], adjust=True)
-            #scores3 = get_all_scores(keywords_gold[i], predicted_keywords3[0], abstracts[i], adjust=True)
+
         except:
             scores = [[0.0, 0.0, 0.0,0.0] , [0.0, 0.0, 0.0,0.0]]
-            #scores1 = [[0.0, 0.0, 0.0,0.0] , [0.0, 0.0, 0.0,0.0]]
-
-        # try:
-        #     if scores1[1][0] >  scores[1][0]:
-        #         print(abstracts[i])
-        #         print(keywords_gold[i])
-        #
-        #         print(predicted_keywords[0], scores[1][0])
-        #         print(predicted_keywords1[0], scores1[1][0])
-        #         print(predicted_keywords2[0], scores2[1][0])
-        #         print(predicted_keywords3[0], scores3[1][0])
-        #         for each in predicted_keywords1[0]:
-        #             if each  not in predicted_keywords and each in keywords_gold[i]:
-        #                 print(each)
-        #         input("?")
-        #
-        # except:
-        #     pass
 
         t5 = time.time()
         all_scores.append(scores[0])
@@ -295,17 +266,4 @@ def eval_file(filepath, year1=1900, year2=2020, bib_files=[], types=[], journals
             str(all_scores_adjust[0]), str(all_scores_adjust[1]), str(all_scores_adjust[2]), str(all_scores_adjust[3])])
 
     return all_scores, all_scores_adjust
-
-
-o1,o2 = eval_file("Datasets/DataFiles/bib_tug_dataset_full.parquet", year1=1988, year2=2020, types=["compsci"] , log=True)
-
-print(o1, o2)
-
-
-#t1,t2 = eval_file("Datasets/DataFiles/bib_tug_dataset_full.parquet",bib_files=["ibmjrd.bib"], limit=50, year1=1990, year2=1990, rand=True, log=True)
-
-'''
-Position Rank
-Try with weights mixed with meta-data
-'''
 

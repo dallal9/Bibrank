@@ -3,7 +3,7 @@ import logging
 import sys
 import subprocess
 
-from position_rank import position_rank
+from position_rank import position_rank_mod
 from tokenizer import StanfordCoreNlpTokenizer
 
 import pke
@@ -18,9 +18,9 @@ from textacy.ke import scake
 from textacy.ke import textrank, yake
 
 from bert_serving.client import BertClient
-path_uke = "C:/Users/dallal/Documents/GitHub/unsupervised_keyword_extraction/" #https://github.com/AnzorGozalishvili/unsupervised_keyword_extraction
+path_uke = "unsupervised_keyword_extraction/" #path for the dir from  https://github.com/AnzorGozalishvili/unsupervised_keyword_extraction
 sys.path.append(path_uke)
-from model.embedrank_transformers import EmbedRankTransformers
+from model.embedrank_transformers import EmbedRankTransformers #uncomment to use EmbedRank
 
 import numpy as np
 import pickle
@@ -179,11 +179,10 @@ class BertEmbedRank (KeyModel):
         :param n:
 
         bert-serving-start -model_dir /tmp/english_L-12_H-768_A-12/ -num_worker=4 (to start the service)
-        bert-serving-start -model_dir C:/Users/dallal/Documents/GitHub/unsupervised_keyword_extraction/cased_L-12_H-768_A-12/ -num_worker=4
         """
         self.model_name = "BertEmbedRank"
         if not bert_path:
-            bert_path = "C:/Users/dallal/Documents/GitHub/unsupervised_keyword_extraction/cased_L-12_H-768_A-12/"
+            bert_path = "unsupervised_keyword_extraction/cased_L-12_H-768_A-12/"
         #try:
         #with open("stdout.txt", "wb") as out, open("stderr.txt", "wb") as err:
         #    self.p = subprocess.Popen(["bert-serving-start", "-model_dir", bert_path, "-num_worker=4"], stdout=out, stderr=err)
@@ -222,9 +221,8 @@ class BertEmbedRank (KeyModel):
     def exit(self):
         self.p.terminate()
 
-"""
-refactor
-"""
+
+
 class BiLSTM (KeyModel):
     def __init__(self, json_config_f, model_f, tokenizer_f):
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -260,11 +258,9 @@ class BiLSTM (KeyModel):
         k = output_keywords[:n]
         return k, [0.0]*len(k)
 
-"""
-refactor
-"""
 
-class PositionRankMod (KeyModel):
+
+class BibRank(KeyModel):
     """
     java -mx4g -cp "*" edu.stanford.nlp.pipeline.StanfordCoreNLPServer -port 9000 -timeout 15000
     """
@@ -274,7 +270,7 @@ class PositionRankMod (KeyModel):
         self.wiki = wiki
         self.model_name = "PositionRankMod"
     def get_keywords(self, text, n=10):
-        keyphrases_p = position_rank(text.split(), self.tokenizer, alpha=0.85, window_size=2, num_keyphrase=n, weights=self.weights,
+        keyphrases_p = position_rank_mod(text.split(), self.tokenizer, alpha=0.85, window_size=2, num_keyphrase=n, weights=self.weights,
                                      wiki=self.wiki)
         return list(map(list, zip(*keyphrases_p)))
 
