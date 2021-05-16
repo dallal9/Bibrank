@@ -10,7 +10,7 @@ The dataset has 18,193 processed document. Each entry has 22 attributes. The lis
 
 The following is example of 5 records and only part of the attributes stored: 
 
-![Bib dataset example](data.png "Bib dataset example")
+![Bib dataset example](data.PNG "Bib dataset example")
 
 ## Dataset creation and extension 
 Millions of Bib records can be processed using teh file `ProcessBib.py`. Which efficiently process, parse, and store the needed information. It can extract missing abstract by calling functions from `get_abstract.py`, which calls "Microsoft Academic" library and fetch the abstract. 
