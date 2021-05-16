@@ -23,6 +23,16 @@ pip install -r requirements.txt
 
     Download: https://stanfordnlp.github.io/CoreNLP/download.html
 
+### Data 
+
+Bib dataset was used for evaluation and for generating the weights used by BibRank model. The dataset contains 18,193 documents where their titles, abstracts, and other metadata stored. 
+
+Another data file was created which includes data from 5 frequently used keyprhase extraction datasets. 
+
+The repository contains code to load, process, and create/ extend datasets. 
+
+More information about datasets can be found [here](Datasets/README.md). 
+
 ## Directory Structure
 ```
 
