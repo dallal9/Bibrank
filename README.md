@@ -90,7 +90,6 @@ We have benchmarked BibRank and state-of-the-art techniques against the dataset.
 │   │   names.txt
 │   │   ProcessBib.py
 │   │   ProcessText.py
-│   │   ProcessXML.py
 │   │   utils.py
 │   │
 │   ├───DataFiles
