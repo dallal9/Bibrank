@@ -6,7 +6,7 @@ bibtexparser == 1.2.0
 bs4 == 0.0.1
 keybert == 0.2.0
 mecab_python3 == 1.0.1
-nltk == 3.4.1
+nltk>=3.4.5
 numpy == 1.20.1
 pandas == 0.24.2
 pyarrow == 2.0.0
