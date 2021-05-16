@@ -1,0 +1,19 @@
+git+https://github.com/boudinfl/pke.git
+bert_serving_server == 1.10.0
+Unidecode == 1.1.1
+bs4 == 0.0.1
+bibtexparser == 1.2.0
+bs4 == 0.0.1
+keybert == 0.2.0
+mecab_python3 == 1.0.1
+nltk == 3.4.1
+numpy == 1.20.1
+pandas == 0.24.2
+pyarrow == 2.0.0
+pymediawiki == 0.6.4
+selenium == 3.141.0
+spacy == 2.1.9
+stanfordcorenlp == 3.9.1.1
+stemming == 1.0.1
+textacy == 0.10.1
+tqdm == 4.47.0
