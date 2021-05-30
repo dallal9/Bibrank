@@ -58,9 +58,13 @@ import sys
 from Models import *
 from KeyEval import *
 
-bib_weights= {"dataset":"Datasets/DataFiles/bib_tug_dataset_full.parquet", "year1":1980, "year2":1986, "types":["compsci"]} #Defines weights data parameters 
+bib_weights= {"dataset":"Datasets/DataFiles/bib_tug_dataset_full.parquet", 
+              "year1":1980, "year2":1986, "types":["compsci"]} #Defines weights data parameters 
 model = BibRank()
-all_scores, all_scores_adjust = eval_file("Datasets/DataFiles/bib_tug_dataset_full.parquet", model,model_param = ["weights from 1980 1986"] ,year1=1988, year2=1990, types=["compsci"] , bib_weights=bib_weights, log=True)
+all_scores, all_scores_adjust = eval_file("Datasets/DataFiles/bib_tug_dataset_full.parquet", 
+                                           model,model_param = ["weights from 1980 1986"] ,
+                                           year1=1988, year2=1990, types=["compsci"] , 
+                                           bib_weights=bib_weights, log=True)
 
 ```
 
