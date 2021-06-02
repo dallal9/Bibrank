@@ -274,6 +274,25 @@ class BibRank(KeyModel):
                                      wiki=self.wiki)
         return list(map(list, zip(*keyphrases_p)))
 
+class CollabRank (KeyModel):
+    def __init__(self, collab_documents):
+        self.collab_documents = collab_documents
+        self.model_name = "CollabRank"
+
+    def get_keywords(self, text, n=10):
+        pos = {'NOUN', 'PROPN', 'ADJ'}
+        extractor = pke.unsupervised.CollabRank()
+
+        extractor.load_document(text,
+                                language='en',
+                                normalization=None)
+        extractor.candidate_selection(pos=pos)
+        extractor.candidate_weighting(collab_documents=self.collab_documents, window=10,
+                                      pos=pos)
+
+        keyphrases, weights = list(map(list, zip(*extractor.get_n_best(n=n))))
+        return keyphrases, weights
+
 text = '''
    Over the past few years, there has been a strong and growing interest
    in faster network technologies such as FDDI and ATM. However, the
