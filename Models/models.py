@@ -1,33 +1,27 @@
-import os
 import logging
+import os
 import sys
-import subprocess
 
-from bibrank import bibrank
-from tokenizer import StanfordCoreNlpTokenizer
-
-import pke
-from pke.utils import compute_document_frequency
-
-from keybert import KeyBERT
-
-import spacy
 import en_core_web_sm
-from textacy.extract.keyterms import sgrank
-from textacy.extract.keyterms import scake
-from textacy.extract.keyterms import textrank, yake
+import pke
+import spacy
+from bibrank import bibrank
+from keybert import KeyBERT
+from pke.utils import compute_document_frequency
+from textacy.extract.keyterms import scake, sgrank, textrank, yake
+from tokenizer import StanfordCoreNlpTokenizer
 
 # from bert_serving.client import BertClient
 path_uke = "Models/unsupervised_keyword_extraction/"  # path for the dir from  https://github.com/AnzorGozalishvili/unsupervised_keyword_extraction
 sys.path.append(path_uke)
 # from model.embedrank_transformers import EmbedRankTransformers #uncomment to use EmbedRank
 
-import numpy as np
 import pickle
-import nltk
+
+
+import numpy as np
 from nltk.corpus import stopwords
 
-from summa import keywords
 
 # import silence_tensorflow.auto
 # from tensorflow.python.keras.models import Model, Sequential, model_from_json, load_model

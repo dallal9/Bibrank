@@ -1,24 +1,26 @@
 import csv
 import json
 import random
-import sys
 import time
-from typing import List
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 from tqdm import tqdm
 
 from Datasets.utils import clean, read_parquet
-
-sys.path.append("Models/")
-from bibrank import get_weights
-
-from Models import *
+from Models.models import BibRank, KeyModel
+from Models.bibrank import get_weights
 
 
 def mask(text1: str, text2: str) -> List[str]:
-    """
-    a simple vectorization function
+    """Vectorizes two strings into lists of integers.
+
+    Args:
+    text1: A string to be vectorized.
+    text2: A string to be vectorized.
+
+    Returns:
+    A tuple of two lists of integers, representing the vectorized versions of text1 and text2.
     """
     base = 0
     vectors = {}
@@ -38,6 +40,17 @@ def mask(text1: str, text2: str) -> List[str]:
 
 
 def get_recall(l1: List[str], l2: List[str]) -> float:
+    """Calculates the recall of two lists of strings.
+
+    Calculates the proportion of elements in l1 that also appear in l2.
+
+    Args:
+    l1: A list of strings.
+    l2: A list of strings.
+
+    Returns:
+    A float representing the recall of l1 and l2.
+    """
     occur_count = 0.0
 
     for each in l2:
@@ -62,9 +75,7 @@ def get_f1(r: float, p: float) -> float:
 
 
 def get_Rprecision(phrase1: List[str], phrase2: List[str]) -> float:
-    """
-    relaxed since it uses "in" instead of checkign the position of words
-    """
+    """relaxed since it uses "in" instead of checking the position of words."""
     occur_count = 0.0
 
     for w1 in phrase2.split():
@@ -101,9 +112,7 @@ def get_all_scores(
     text: str = "",
     adjust: bool = False,
 ) -> List:
-    """
-    SemEval-2010 Task 5, micro averaged f1, recall, precision
-    """
+    """SemEval-2010 Task 5, micro averaged f1, recall, precision."""
     metrics = get_scores(gold_keywords, predicted_keywords)
 
     adjusted_gold = []
@@ -131,9 +140,25 @@ def get_key_abs(
     count: int = None,
     rand: bool = False,
 ):
+    """Returns a list of keywords and a list of abstracts from a given filepath
+    that meet specified constraints.
+
+        Args:
+        filepath: path of file to be read
+        year1: start year for filtering by year (default: 1900)
+        year2: end year for filtering by year (default: 2020)
+        bib_files: list of bib files to filter by (default: [])
+        types: list of types to filter by (default: [])
+        journals: list of journals to filter by (default: [])
+        count: number of rows to return (default: None)
+        rand: whether to return rows randomly (default: False)
+    ß
+        Returns:
+        List[str], List[str]: list of keywords and list of abstracts
+    """
 
     jfile = open("Datasets/bib_info.json").read()
-    tables, names = json.loads(jfile)
+    tables, _ = json.loads(jfile)
     new_tables = {}
     for table in tables:
         new_tables[table] = []
@@ -145,7 +170,7 @@ def get_key_abs(
     if bib_files:
         try:
             df = df[df["bib_file"].isin(bib_files)]
-        except:
+        except Exception:
             df = df[df["bibsource"].isin(bib_files)]
 
     if types:
@@ -162,7 +187,7 @@ def get_key_abs(
         df["year"] = df["year"].astype("int")
         df = df[df["year"] >= year1]
         df = df[df["year"] <= year2]
-    except:
+    except Exception:
         pass
 
     if rand and count:
@@ -172,7 +197,6 @@ def get_key_abs(
 
     keywords = df["keywords"].tolist()
     abstracts = df["abstract"].tolist()
-    c1, c2 = 0.0, 0.0
 
     processed_keywords = []
     for i in range(len(keywords)):
@@ -198,21 +222,43 @@ def get_key_abs(
 
 
 def eval_file(
-    filepath,
-    model,
-    year1=1900,
-    year2=2020,
-    bib_files=[],
-    types=[],
-    journals=[],
-    limit=None,
-    rand=False,
-    log=True,
-    model_param="",
-    outputpaths=["output.json", "output.tsv"],
-    bib_weights={},
-    top_n=10,
-):
+    filepath: str,
+    model: KeyModel,
+    year1: int = 1900,
+    year2: int = 2020,
+    bib_files: List[str] = [],
+    types: List[str] = [],
+    journals: List[str] = [],
+    limit: Optional[int] = None,
+    rand: bool = False,
+    log: bool = True,
+    model_param: str = "",
+    outputpaths: List[str] = ["output.json", "output.tsv"],
+    bib_weights: Dict[str, Any] = {},
+    top_n: int = 10,
+) -> Dict[str, Any]:
+    """Evaluates the performance of a KeyModel object on a dataset specified by
+    filepath.
+
+    Args:
+        filepath: str, the path to the file containing the dataset to evaluate.
+        model: KeyModel, the model to be evaluated.
+        year1: int, optional, the earliest year to consider when filtering the dataset.
+        year2: int, optional, the latest year to consider when filtering the dataset.
+        bib_files: list, optional, a list of file paths to additional bibliographic data to use when filtering the dataset.
+        types: list, optional, a list of document types to consider when filtering the dataset.
+        journals: list, optional, a list of journals to consider when filtering the dataset.
+        limit: int, optional, the maximum number of documents to consider when filtering the dataset.
+        rand: bool, optional, if True, filters the dataset by selecting a random subset of documents.
+        log: bool, optional, if True, enables logging.
+        model_param: str, optional, additional parameters to specify for the model.
+        outputpaths: list, optional, a list of file paths to write the evaluation results to.
+        bib_weights: dict, optional, a dictionary of parameters specifying a dataset to use for generating weights for the BibRank model.
+        top_n: int, optional, the number of predicted keywords to consider when evaluating the model.
+
+    Returns:
+        dict, a dictionary containing information about the evaluation, such as the label, model name, and various evaluation scores.
+    """
 
     t1 = time.time()
 
@@ -249,7 +295,7 @@ def eval_file(
                 keywords_gold[i], predicted_keywords[0], abstracts[i], adjust=True
             )
 
-        except:
+        except Exception:
             scores = [[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]
 
         data_line = [abstracts[i], keywords_gold[i], predicted_keywords[0]]
