@@ -27,7 +27,7 @@ pip install -r requirements.txt
  python -m spacy download en_core_web_lg
  ```
 
--nltk dependencies 
+- NLTK dependencies 
  ```
  nltk.download('wordnet')
  ```
