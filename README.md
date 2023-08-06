@@ -22,6 +22,15 @@ pip install -r requirements.txt
 - BibRank and PositionRank use Standford CoreNLP Toolkit
 
     Download: https://stanfordnlp.github.io/CoreNLP/download.html
+- Install spacy model: en_core_web_lg
+ ```
+ python -m spacy download en_core_web_lg
+ ```
+
+-nltk dependencies 
+ ```
+ nltk.download('wordnet')
+ ```
 
 ## Example 
 `Models Evaluation.ipynb` notebook has examples for different models evaluations.
@@ -54,9 +63,8 @@ java -mx1g -cp "*" edu.stanford.nlp.pipeline.StanfordCoreNLPServer -port 9000 -t
 
 Then the following code can be run from the main directory. 
 ```python
-import sys
-from Models import *
-from KeyEval import *
+from Models.models import *
+from key_eval import *
 
 bib_weights= {"dataset":"Datasets/DataFiles/bib_tug_dataset_full.parquet", 
               "year1":1980, "year2":1986, "types":["compsci"]} #Defines weights data parameters 
@@ -65,7 +73,6 @@ all_scores, all_scores_adjust = eval_file("Datasets/DataFiles/bib_tug_dataset_fu
                                            model,model_param = ["weights from 1980 1986"] ,
                                            year1=1988, year2=1990, types=["compsci"] , 
                                            bib_weights=bib_weights, log=True)
-
 ```
 
 `all_scores` evaluation scores F1, recall, precision, Rprecision (in order)

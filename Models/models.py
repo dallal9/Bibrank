@@ -5,11 +5,11 @@ import sys
 import en_core_web_sm
 import pke
 import spacy
-from bibrank import bibrank
+from Models.bibrank import bibrank
 from keybert import KeyBERT
 from pke.utils import compute_document_frequency
 from textacy.extract.keyterms import scake, sgrank, textrank, yake
-from tokenizer import StanfordCoreNlpTokenizer
+from Models.tokenizer import StanfordCoreNlpTokenizer
 
 # from bert_serving.client import BertClient
 path_uke = "Models/unsupervised_keyword_extraction/"  # path for the dir from  https://github.com/AnzorGozalishvili/unsupervised_keyword_extraction
