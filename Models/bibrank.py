@@ -1,12 +1,12 @@
 # coding:utf-8
 import math
-import stemming.porter2 as porter
+#import stemming.porter2 as porter
 import numpy as np
 import copy
 from collections import Counter
 from mediawiki import MediaWiki
 from nltk.stem import WordNetLemmatizer
-
+from nltk import PorterStemmer
 
 def get_cat(text):
     try:
@@ -31,39 +31,21 @@ def get_weights(keywords_list):
             except:
                 words[keyword] = 1
     max_key = max(words, key=words.get)
-    factor = words[max_key]
+    factor = words[max_key] / 1
 
     for k in words:
         words[k] = words[k] / factor
     return words
 
 
-def position_rank_mod(text, tokenizer, alpha=0.85, window_size=6, num_keyphrase=10, lang="en",weights={},wiki=False):
-    """Compute position rank score.
-
-    Position rank is a method for extracting keyphrase from sentence.
-    This method is allowed any language if you provide tokenizer
-    that tokenize language you wanna apply position rank.
-    In the oroginal paper, authors used 'title' and 'abstract' of scholarly documents.
+def bibrank(text, tokenizer, alpha=0.85, window_size=6, num_keyphrase=10, lang="en",weights={},wiki=False):
+    """
+    Position Features are based on the work done in PositionRank
     Original paper is here: http://aclweb.org/anthology/P/P17/P17-1102.pdf
-
-    Args:
-      sentence: Text concatenated title and abstract.
-      tokenizer: Object that tokenize sentence.
-        Tokenizer must has tokenize(), tokenize() receive sentence and return token list
-        and phrase list. See tokenizer.py and class of tokenizer for detail.
-      alpha: Damping parameter. This allows 'teleport' operation into another node in the graph.
-      window_size: Size of woindow for co-occurece word.
-      num_keyphrase: Number of keyphrase which method will return.
-      lang: Target language.
-
-    Returns:
-      Keyphrase list. Length of list is decided by 'num_keyphrase' param.
-
     """
     lemmatizer = WordNetLemmatizer()
     if lang == "en":
-        stem =  porter.stem #lemmatizer.lemmatize #
+        stem =  lemmatizer.lemmatize #porter.stem #
     else:
         stem = lambda word: word
     
@@ -113,9 +95,11 @@ def position_rank_mod(text, tokenizer, alpha=0.85, window_size=6, num_keyphrase=
             adjancency_matrix[word2idx[w]][word2idx[co_word]] = freq
 
     adjancency_matrix = adjancency_matrix / adjancency_matrix.sum(axis=0)
+    
     p_vec = p_vec / p_vec.sum()
     # principal eigenvector s
     s_vec = np.ones(n) / n
+
 
     # threshold
     lambda_val = 1.0
